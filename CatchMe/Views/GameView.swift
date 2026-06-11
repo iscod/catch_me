@@ -26,7 +26,7 @@ struct GameView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: isPad ? 24 : 16) {
+            VStack(spacing: isPad ? 20 : 10) {
                 topBar
                 statusBar
                 itemHintBar

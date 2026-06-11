@@ -40,7 +40,7 @@ struct BoardView: View {
                     .fill(Self.boardFrame)
             }
             .clipShape(RoundedRectangle(cornerRadius: isPad ? 16 : 12))
-            .position(x: geo.size.width / 2, y: geo.size.height / 2)
+            .position(x: geo.size.width / 2, y: boardHeight / 2)
             .onChange(of: state.pendingEffect) { _, effect in
                 guard let effect else {
                     effectVisual = .idle
