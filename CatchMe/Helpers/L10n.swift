@@ -5,7 +5,17 @@ enum L10n {
     static var appSubtitle: String { String(localized: "app.subtitle") }
     static var chooseMode: String { String(localized: "menu.chooseMode") }
     static var startGame: String { String(localized: "menu.startGame") }
+    static var supportUs: String { String(localized: "support.us") }
+    static var supportThankYou: String { String(localized: "support.thankYou") }
+    static var supportPending: String { String(localized: "support.pending") }
+    static var supportProductUnavailable: String { String(localized: "support.unavailable") }
+    static var supportLoadFailed: String { String(localized: "support.loadFailed") }
+    static var supportErrorTitle: String { String(localized: "support.errorTitle") }
     static var backToMenu: String { String(localized: "result.backToMenu") }
+
+    static func supportButtonPrice(_ price: String) -> String {
+        String(format: String(localized: "support.buttonPrice %@"), price)
+    }
 
     static var dadWinHeadline: String { String(localized: "result.dadWin.headline") }
     static var daughterWinHeadline: String { String(localized: "result.daughterWin.headline") }

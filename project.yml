@@ -31,3 +31,10 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.family.catchme
         GENERATE_INFOPLIST_FILE: YES
         STRING_CATALOG_GENERATE_SYMBOLS: NO
+schemes:
+  CatchMe:
+    build:
+      targets:
+        CatchMe: all
+    run:
+      storeKitConfiguration: CatchMe/Resources/Products.storekit

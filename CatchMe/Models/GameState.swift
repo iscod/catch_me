@@ -182,52 +182,98 @@ final class GameState {
         return true
     }
 
-    private static let minTotalItems = 5
+    /// 第 5 排(0-based row 4)：随机撒少量道具
+    private static let scoutRow = boardRows / 2 - 1
+    private static let scoutRowItemCount = 2
+    /// 第 6 排(0-based row 5)：横向道具墙，爸爸不能踏入
+    private static let barrierRow = boardRows / 2
+    private static let minExtraItems = 7
+
+    private enum ItemKind: CaseIterable {
+        case banana, bomb, freeze
+    }
 
     private func spawnItems() {
-        var candidates = Self.itemSpawnCells(excluding: dadPosition, and: daughterPosition)
-        var bananaCount = Int.random(in: 2...6)
-        var bombCount = Int.random(in: 1...3)
-        var freezeCount = Int.random(in: 1...3)
+        var bananas = Set<GridPosition>()
+        var bombs = Set<GridPosition>()
+        var freezes = Set<GridPosition>()
 
-        while bananaCount + bombCount + freezeCount < Self.minTotalItems {
+        for col in 0..<Self.boardCols {
+            placeRandomItem(
+                at: GridPosition(row: Self.barrierRow, col: col),
+                bananas: &bananas, bombs: &bombs, freezes: &freezes
+            )
+        }
+
+        let scoutCells = (0..<Self.boardCols)
+            .map { GridPosition(row: Self.scoutRow, col: $0) }
+            .filter { $0 != dadPosition && $0 != daughterPosition }
+            .shuffled()
+            .prefix(Self.scoutRowItemCount)
+        for cell in scoutCells {
+            placeRandomItem(at: cell, bananas: &bananas, bombs: &bombs, freezes: &freezes)
+        }
+
+        var candidates = Self.itemSpawnCells(excluding: dadPosition, and: daughterPosition)
+        var bananaCount = Int.random(in: 3...7)
+        var bombCount = Int.random(in: 2...4)
+        var freezeCount = Int.random(in: 2...4)
+
+        while bananaCount + bombCount + freezeCount < Self.minExtraItems {
             switch Int.random(in: 0..<3) {
-            case 0 where bananaCount < 6: bananaCount += 1
-            case 1 where bombCount < 3: bombCount += 1
-            case 2 where freezeCount < 3: freezeCount += 1
+            case 0 where bananaCount < 8: bananaCount += 1
+            case 1 where bombCount < 5: bombCount += 1
+            case 2 where freezeCount < 5: freezeCount += 1
             default:
-                if bananaCount < 6 { bananaCount += 1 }
-                else if bombCount < 3 { bombCount += 1 }
-                else if freezeCount < 3 { freezeCount += 1 }
+                if bananaCount < 8 { bananaCount += 1 }
+                else if bombCount < 5 { bombCount += 1 }
+                else if freezeCount < 5 { freezeCount += 1 }
             }
         }
 
         let total = bananaCount + bombCount + freezeCount
         if total > candidates.count {
             var overflow = total - candidates.count
-            while overflow > 0, bananaCount > 2 {
+            while overflow > 0, bananaCount > 3 {
                 bananaCount -= 1
                 overflow -= 1
             }
-            while overflow > 0, bombCount > 1 {
+            while overflow > 0, bombCount > 2 {
                 bombCount -= 1
                 overflow -= 1
             }
-            while overflow > 0, freezeCount > 1 {
+            while overflow > 0, freezeCount > 2 {
                 freezeCount -= 1
                 overflow -= 1
             }
         }
 
-        bananaPositions = Set(candidates.shuffled().prefix(bananaCount))
-        candidates.removeAll { bananaPositions.contains($0) }
-        bombPositions = Set(candidates.shuffled().prefix(bombCount))
-        candidates.removeAll { bombPositions.contains($0) }
-        freezePositions = Set(candidates.shuffled().prefix(freezeCount))
+        bananas.formUnion(candidates.shuffled().prefix(bananaCount))
+        candidates.removeAll { bananas.contains($0) || bombs.contains($0) || freezes.contains($0) }
+        bombs.formUnion(candidates.shuffled().prefix(bombCount))
+        candidates.removeAll { bananas.contains($0) || bombs.contains($0) || freezes.contains($0) }
+        freezes.formUnion(candidates.shuffled().prefix(freezeCount))
+
+        bananaPositions = bananas
+        bombPositions = bombs
+        freezePositions = freezes
+    }
+
+    private func placeRandomItem(
+        at cell: GridPosition,
+        bananas: inout Set<GridPosition>,
+        bombs: inout Set<GridPosition>,
+        freezes: inout Set<GridPosition>
+    ) {
+        switch ItemKind.allCases.randomElement()! {
+        case .banana: bananas.insert(cell)
+        case .bomb: bombs.insert(cell)
+        case .freeze: freezes.insert(cell)
+        }
     }
 
     static func itemSpawnCells(excluding dad: GridPosition, and daughter: GridPosition) -> [GridPosition] {
-        (boardRows / 2..<boardRows).flatMap { row in
+        ((barrierRow + 1)..<boardRows).flatMap { row in
             (0..<boardCols).map { col in
                 GridPosition(row: row, col: col)
             }

@@ -5,6 +5,13 @@ struct MenuView: View {
 
     @State private var selectedMode: GameMode = .playAsDaughter
     @State private var activeGame: GameSession?
+    @State private var titleAppeared = false
+    @State private var runnerBounce = false
+    @State private var dadChase = false
+    @State private var daughterRun = false
+    @State private var store = StoreManager()
+    @State private var showThankYou = false
+    @State private var showPurchaseError = false
 
     private var isPad: Bool { AdaptiveLayout.isPad(horizontalSizeClass) }
     private var contentWidth: CGFloat { AdaptiveLayout.menuMaxWidth(horizontalSizeClass) }
@@ -26,6 +33,22 @@ struct MenuView: View {
         .fullScreenCover(item: $activeGame) { session in
             GameView(mode: session.mode)
         }
+        .alert(L10n.supportUs, isPresented: $showThankYou) {
+            Button("OK", role: .cancel) { store.clearThankYou() }
+        } message: {
+            Text(store.thankYouMessage ?? L10n.supportThankYou)
+        }
+        .alert(L10n.supportErrorTitle, isPresented: $showPurchaseError) {
+            Button("OK", role: .cancel) { store.clearError() }
+        } message: {
+            Text(store.errorMessage ?? "")
+        }
+        .onChange(of: store.thankYouMessage) { _, message in
+            showThankYou = message != nil
+        }
+        .onChange(of: store.errorMessage) { _, message in
+            showPurchaseError = message != nil
+        }
     }
 
     // MARK: - iPhone
@@ -40,11 +63,14 @@ struct MenuView: View {
                     .adaptiveCentered(maxWidth: contentWidth)
             }
 
-            startButton
-                .padding(.horizontal, 24)
-                .padding(.top, 12)
-                .padding(.bottom, 8)
-                .adaptiveCentered(maxWidth: contentWidth)
+            VStack(spacing: 10) {
+                startButton
+                supportButton
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+            .adaptiveCentered(maxWidth: contentWidth)
                 .background {
                     Rectangle()
                         .fill(.ultraThinMaterial)
@@ -75,7 +101,10 @@ struct MenuView: View {
         VStack(spacing: isPad ? 32 : 20) {
             titleSection
             modeSection
-            if isPad { startButton }
+            if isPad {
+                startButton
+                supportButton
+            }
         }
     }
 
@@ -83,11 +112,27 @@ struct MenuView: View {
         VStack(spacing: isPad ? 10 : 6) {
             HStack(spacing: 12) {
                 Text("👨")
-                Text("🏃")
-                    .font(.system(size: isPad ? 48 : 40))
+                    .offset(x: dadChase ? 5 : 0, y: dadChase ? 1 : 0)
+                    .rotationEffect(.degrees(dadChase ? 10 : 0))
+
+                ZStack {
+                    Text("💨")
+                        .font(.system(size: isPad ? 22 : 18))
+                        .opacity(runnerBounce ? 0.85 : 0.2)
+                        .offset(x: runnerBounce ? -18 : -10, y: runnerBounce ? -2 : 4)
+                    Text("🏃")
+                        .font(.system(size: isPad ? 48 : 40))
+                        .offset(x: runnerBounce ? 3 : -3, y: runnerBounce ? -12 : 3)
+                        .rotationEffect(.degrees(runnerBounce ? 8 : -8))
+                }
+
                 Text("👧")
+                    .offset(x: daughterRun ? -5 : 0, y: daughterRun ? -6 : 0)
+                    .rotationEffect(.degrees(daughterRun ? -8 : 4))
             }
             .font(.system(size: isPad ? 64 : 52))
+            .frame(height: isPad ? 80 : 68)
+
             Text(L10n.appTitle)
                 .font(.system(size: isPad ? 42 : 34, weight: .heavy, design: .rounded))
                 .foregroundStyle(Color(red: 0.95, green: 0.45, blue: 0.3))
@@ -97,6 +142,24 @@ struct MenuView: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
+        .scaleEffect(titleAppeared ? 1 : 0.88)
+        .opacity(titleAppeared ? 1 : 0)
+        .onAppear { startTitleAnimations() }
+    }
+
+    private func startTitleAnimations() {
+        withAnimation(.spring(response: 0.55, dampingFraction: 0.72)) {
+            titleAppeared = true
+        }
+        withAnimation(.easeInOut(duration: 0.26).repeatForever(autoreverses: true)) {
+            runnerBounce = true
+        }
+        withAnimation(.easeInOut(duration: 0.55).repeatForever(autoreverses: true)) {
+            dadChase = true
+        }
+        withAnimation(.easeInOut(duration: 0.38).repeatForever(autoreverses: true)) {
+            daughterRun = true
+        }
     }
 
     private var modeSection: some View {
@@ -197,6 +260,42 @@ struct MenuView: View {
             }
         }
         .buttonStyle(.plain)
+    }
+
+    private var supportButton: some View {
+        Button {
+            Task { await store.purchaseSupport() }
+        } label: {
+            HStack(spacing: 8) {
+                if store.purchaseInProgress {
+                    ProgressView()
+                        .tint(Color(red: 0.95, green: 0.45, blue: 0.3))
+                } else {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: isPad ? 18 : 16, weight: .semibold))
+                }
+                if let price = store.supportProduct?.displayPrice {
+                    Text(L10n.supportButtonPrice(price))
+                } else {
+                    Text(L10n.supportUs)
+                }
+            }
+            .font(.system(size: isPad ? 18 : 16, weight: .semibold, design: .rounded))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, isPad ? 14 : 12)
+            .foregroundStyle(Color(red: 0.95, green: 0.45, blue: 0.3))
+            .background {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(.white.opacity(0.9))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16)
+                            .strokeBorder(Color(red: 0.95, green: 0.45, blue: 0.3).opacity(0.35), lineWidth: 1.5)
+                    }
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(store.purchaseInProgress || store.isLoadingProducts)
+        .opacity(store.purchaseInProgress || store.isLoadingProducts ? 0.7 : 1)
     }
 
     private var startButton: some View {

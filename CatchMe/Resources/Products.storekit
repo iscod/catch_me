@@ -1,0 +1,51 @@
+{
+  "identifier" : "CatchMeProducts",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  },
+  "inAppPurchases" : [
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : false,
+      "internalID" : "6755000001",
+      "localizations" : [
+        {
+          "description" : "Send a tip to support CatchMe development.",
+          "displayName" : "Support Us",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "请我们喝杯咖啡，支持抓住小宝贝持续更新。",
+          "displayName" : "支持我们",
+          "locale" : "zh_Hans"
+        },
+        {
+          "description" : "請我們喝杯咖啡，支持抓住小寶貝持續更新。",
+          "displayName" : "支持我們",
+          "locale" : "zh_Hant"
+        }
+      ],
+      "productID" : "com.family.catchme.support",
+      "referenceName" : "Support Us Tip",
+      "type" : "Consumable"
+    }
+  ]
+}
